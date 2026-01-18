@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPRING DUMPER</title>
+<style>
+  body {
+    background-color: #0f111a;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+  }
+  h1 { color: #4cd137; margin-bottom: 20px; }
+  input[type="file"], input[type="text"] {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    width: 80%;
+    max-width: 500px;
+  }
+  button {
+    background-color: #4cd137;
+    border: none;
+    color: #0f111a;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    margin: 5px;
+  }
+  button:hover { background-color: #3ebd2f; }
+  textarea {
+    margin-top: 20px;
+    width: 90%;
+    max-width: 600px;
+    height: 300px;
+    background-color: #1c1e2a;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 15px;
+    font-family: monospace;
+    font-size: 14px;
+    resize: none;
+  }
+</style>
+</head>
+<body>
+
+<h1>SPRING DUMPER</h1>
+
+<input type="file" id="userFile" accept=".lua,.txt">
+<input type="text" id="userURL" placeholder="Or paste raw GitHub file URL">
+<button onclick="runDumper()">Run Dumper</button>
+<button onclick="downloadOutput()">Download Output</button>
+
+<textarea id="output" placeholder="Output will appear here..." readonly></textarea>
+
+<script>
+const dumperURL = "https://raw.githubusercontent.com/YESYES6TEAM/Dumper/refs/heads/main/catnapdumper.lua.txt";
+
+let finalOutput = "";
+
+async function runDumper() {
+  const output = document.getElementById('output');
+  output.value = "Fetching dumper...";
+
+  try {
+    // Fetch the dumper (catnapdumper.lua.txt)
+    const dumperResp = await fetch(dumperURL);
+    if (!dumperResp.ok) throw new Error("Failed to fetch dumper");
+    const dumperContent = await dumperResp.text();
+
+    // Get user input
+    const fileInput = document.getElementById('userFile').files[0];
+    const urlInput = document.getElementById('userURL').value;
+
+    if (fileInput) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        processDump(dumperContent, e.target.result);
+      };
+      reader.readAsText(fileInput);
+      return;
+    } else if (urlInput) {
+      const userResp = await fetch(urlInput);
+      if (!userResp.ok) throw new Error("Failed to fetch user file");
+      const userContent = await userResp.text();
+      processDump(dumperContent, userContent);
+    } else {
+      alert("Please upload a file or paste a raw GitHub URL");
+      return;
+    }
+  } catch(err) {
+    output.value = "Error: " + err;
+  }
+}
+
+// Simulate running catnapdumper on the user file
+function processDump(dumper, userFile) {
+  const output = document.getElementById('output');
+
+  // Example simulated dumper logic:
+  // Prefix each line with "-- DUMPED BY CATNAP" and append dumper header
+  finalOutput = "-- Dumper: catnapdumper.lua.txt\n" + dumper.split('\n').map(line => "-- " + line).join('\n') + "\n\n" +
+                userFile.split('\n').map(line => "-- DUMPED BY CATNAP: " + line).join('\n');
+
+  output.value = finalOutput;
+}
+
+// Download final output as output.lua.txt
+function downloadOutput() {
+  if (!finalOutput) {
+    alert("No output yet! Run the dumper first.");
+    return;
+  }
+  const blob = new Blob([finalOutput], { type: "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "output.lua.txt";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+</script>
+
+</body>
+</html>
